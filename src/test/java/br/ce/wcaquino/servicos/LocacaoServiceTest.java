@@ -1,10 +1,10 @@
 package br.ce.wcaquino.servicos;
 
-import static br.ce.wcaquino.utils.DataUtils.isMesmaData;
-import static br.ce.wcaquino.utils.DataUtils.obterDataComDiferencaDias;
+import static br.ce.wcaquino.matchers.OwnMatchers.caiNumaSegundaFeira;
+import static br.ce.wcaquino.matchers.OwnMatchers.ehHoje;
+import static br.ce.wcaquino.matchers.OwnMatchers.ehHojeComDiferencaEmDias;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.assertThat;
 
 import java.util.ArrayList;
@@ -19,7 +19,6 @@ import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ErrorCollector;
@@ -63,7 +62,8 @@ public class LocacaoServiceTest {
 	@Test
 	public void deveAlugarFilme() throws Exception {
 		
-//		Assume.assume
+		Assume.assumeFalse(DataUtils.verificarDiaSemana(new Date(), Calendar.MONDAY));
+		
 		// cenario
 		Usuario usuario = new Usuario("Mario Miranda");
 		Filme filmeA = new Filme("Filme 1", 2, 5.0);
@@ -74,20 +74,22 @@ public class LocacaoServiceTest {
 		Locacao locacao = service.alugarFilme(usuario, filmes);
 		
 		// verificacao
-		Assert.assertEquals(5.0, locacao.getValor(), 0.01);
-		Assert.assertTrue(DataUtils.isMesmaData(locacao.getDataLocacao(), new Date()));
-		Assert.assertTrue(DataUtils.isMesmaData(locacao.getDataRetorno(), DataUtils.obterDataComDiferencaDias(1)));
+//		Assert.assertEquals(5.0, locacao.getValor(), 0.01);
+//		Assert.assertTrue(DataUtils.isMesmaData(locacao.getDataLocacao(), new Date()));
+//		Assert.assertTrue(DataUtils.isMesmaData(locacao.getDataRetorno(), DataUtils.obterDataComDiferencaDias(1)));
 		
 		// We can use fluent interface and static import to make reading easier
-		assertThat(locacao.getValor(), is(equalTo(5.0)));
-		assertThat(locacao.getValor(), is(not(6.0)));
-		assertThat(isMesmaData(locacao.getDataLocacao(), new Date()), is(true));
-		assertThat(isMesmaData(locacao.getDataRetorno(), obterDataComDiferencaDias(1)), is(true));
+//		assertThat(locacao.getValor(), is(equalTo(5.0)));
+//		assertThat(locacao.getValor(), is(not(6.0)));
+//		assertThat(isMesmaData(locacao.getDataLocacao(), new Date()), is(true));
+//		assertThat(isMesmaData(locacao.getDataRetorno(), obterDataComDiferencaDias(1)), is(true));
 		
 		// with ErrorCollector tests continue after finding the first error
-//		error.checkThat(locacao.getValor(), is(equalTo(6.0)));
+		error.checkThat(locacao.getValor(), is(equalTo(5.0)));
 //		error.checkThat(isMesmaData(locacao.getDataLocacao(), new Date()), is(true));
+		error.checkThat(locacao.getDataLocacao(), ehHoje());
 //		error.checkThat(isMesmaData(locacao.getDataRetorno(), obterDataComDiferencaDias(1)), is(false));
+		error.checkThat(locacao.getDataRetorno(), ehHojeComDiferencaEmDias(1));
 	}
 	
 	@Test(expected=FilmeSemEstoqueException.class) 
@@ -236,14 +238,23 @@ public class LocacaoServiceTest {
 //	}
 	
 	@Test
-	@Ignore
 	public void naoDeveDevolverFilmeNoDomingo() throws LocadoraException, FilmeSemEstoqueException {
+		
+		Assume.assumeTrue(DataUtils.verificarDiaSemana(new Date(), Calendar.SATURDAY));
+		
 		Usuario usuario = new Usuario("Cristina");
 		Collection<Filme> filmes = Arrays.asList(new Filme("Filme1", 1, 5.0));
 		
 		Locacao retorno = service.alugarFilme(usuario, filmes);
 		
-		boolean ehSegunda = DataUtils.verificarDiaSemana(retorno.getDataRetorno(), Calendar.MONDAY);
-		Assert.assertTrue(ehSegunda);
+//		boolean ehSegunda = DataUtils.verificarDiaSemana(retorno.getDataRetorno(), Calendar.MONDAY);
+//		Assert.assertTrue(ehSegunda);
+//		assertThat(retorno.getDataLocacao(), caiEm(Calendar.MONDAY));
+//		assertThat(retorno.getDataLocacao(), caiNumaSegundaFeira());
+		
+//		assertThat(retorno.getDataLocacao(), new DiaDaSemanaMatcher(Calendar.MONDAY));
+		
+//		assertThat(retorno.getDataLocacao(), caiEm(Calendar.MONDAY));
+		assertThat(retorno.getDataLocacao(), caiNumaSegundaFeira());
 	}
 }
