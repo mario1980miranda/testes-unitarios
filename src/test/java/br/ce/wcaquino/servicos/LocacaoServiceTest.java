@@ -1,17 +1,32 @@
 package br.ce.wcaquino.servicos;
 
+import static br.ce.wcaquino.builders.FilmeBuilder.umFilme;
+import static br.ce.wcaquino.builders.FilmeBuilder.umFilmeSemEstoque;
+import static br.ce.wcaquino.builders.LocacaoBuilder.umaLocacao;
+import static br.ce.wcaquino.builders.UsuarioBuilder.umUsuario;
 import static br.ce.wcaquino.matchers.OwnMatchers.caiNumaSegundaFeira;
 import static br.ce.wcaquino.matchers.OwnMatchers.ehHoje;
 import static br.ce.wcaquino.matchers.OwnMatchers.ehHojeComDiferencaEmDias;
+import static java.lang.Boolean.TRUE;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.atLeast;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.atMost;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
+import java.util.List;
 
 import org.junit.After;
 import org.junit.AfterClass;
@@ -23,7 +38,9 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ErrorCollector;
 import org.junit.rules.ExpectedException;
+import org.mockito.Mockito;
 
+import br.ce.wcaquino.daos.LocacaoDAO;
 import br.ce.wcaquino.entidades.Filme;
 import br.ce.wcaquino.entidades.Locacao;
 import br.ce.wcaquino.entidades.Usuario;
@@ -33,7 +50,13 @@ import br.ce.wcaquino.utils.DataUtils;
 
 public class LocacaoServiceTest {
 	
-	private static LocacaoService service;
+	private LocacaoService service;
+	
+	private SPCService spcService;
+	
+	private EmailService emailService;
+	
+	private LocacaoDAO dao;
 	
 	@Rule public ErrorCollector error = new ErrorCollector();
 	
@@ -41,7 +64,13 @@ public class LocacaoServiceTest {
 	
 	@Before
 	public void setup() {
-		
+		service = new LocacaoService();
+		dao = Mockito.mock(LocacaoDAO.class);
+		service.setLocacaoDAO(dao);
+		spcService = Mockito.mock(SPCService.class);
+		service.setSPCService(spcService);
+		emailService = Mockito.mock(EmailService.class);
+		service.setEmailService(emailService);
 	}
 	
 	@After
@@ -51,7 +80,7 @@ public class LocacaoServiceTest {
 	
 	@BeforeClass
 	public static void setupClass() {
-		service = new LocacaoService();
+
 	}
 	
 	@AfterClass
@@ -65,8 +94,8 @@ public class LocacaoServiceTest {
 		Assume.assumeFalse(DataUtils.verificarDiaSemana(new Date(), Calendar.MONDAY));
 		
 		// cenario
-		Usuario usuario = new Usuario("Mario Miranda");
-		Filme filmeA = new Filme("Filme 1", 2, 5.0);
+		Usuario usuario = umUsuario().agora();
+		Filme filmeA = umFilme().comValor(5.0).agora();
 		
 		Collection<Filme> filmes = new ArrayList<Filme>(Arrays.asList(filmeA));
 		
@@ -99,10 +128,10 @@ public class LocacaoServiceTest {
 	 * Funciona bem quando apenas a exception importa para o test.
 	 */
 	public void naoDeveAlugarFilmeSemEstoque_Elegante() throws Exception {
-		Usuario usuario = new Usuario("Mario Miranda");
-		Filme filmeA = new Filme("Filme 1", 2, 5.0);
-		Filme filmeB = new Filme("Filme 2", 0, 4.0);
-		Filme filmeC = new Filme("Filme 3", 5, 10.0);
+		Usuario usuario = umUsuario().agora();
+		Filme filmeA = umFilme().agora();
+		Filme filmeB = umFilmeSemEstoque().agora();
+		Filme filmeC = umFilme().agora();
 		
 		Collection<Filme> filmes = new ArrayList<Filme>(Arrays.asList(filmeA, filmeB, filmeC));
 
@@ -117,10 +146,10 @@ public class LocacaoServiceTest {
 	 * Solucao mais completa
 	 */
 	public void naoDeveAlugarFilmeSemEstoque_Robusta() {
-		Usuario usuario = new Usuario("Mario Miranda");
-		Filme filmeA = new Filme("Filme 1", 2, 5.0);
-		Filme filmeB = new Filme("Filme 2", 1, 4.0);
-		Filme filmeC = new Filme("Filme 3", 0, 10.0);
+		Usuario usuario = umUsuario().agora();
+		Filme filmeA = umFilme().semEstoque().agora();
+		Filme filmeB = umFilme().agora();
+		Filme filmeC = umFilme().agora();
 		
 		Collection<Filme> filmes = new ArrayList<Filme>(Arrays.asList(filmeA, filmeB, filmeC));
 		
@@ -140,10 +169,10 @@ public class LocacaoServiceTest {
 	 * A regra deve ser declarada antes da acao (de chamar a classe de servico)
 	 */
 	public void naoDeveAlugarFilmeSemEstoque_RegraExcecaoEsperada() throws Exception {
-		Usuario usuario = new Usuario("Mario Miranda");
-		Filme filmeA = new Filme("Filme 1", 0, 5.0);
-		Filme filmeB = new Filme("Filme 2", 1, 4.0);
-		Filme filmeC = new Filme("Filme 3", 5, 10.0);
+		Usuario usuario = umUsuario().agora();
+		Filme filmeA = umFilme().agora();
+		Filme filmeB = umFilme().agora();
+		Filme filmeC = umFilme().semEstoque().agora();
 		
 		Collection<Filme> filmes = new ArrayList<Filme>(Arrays.asList(filmeA, filmeB, filmeC));
 
@@ -155,9 +184,9 @@ public class LocacaoServiceTest {
 	
 	@Test
 	public void naoDeveAlugarFilmeSemUsuario() throws FilmeSemEstoqueException {
-		Filme filmeA = new Filme("Filme 1", 2, 5.0);
-		Filme filmeB = new Filme("Filme 2", 1, 4.0);
-		Filme filmeC = new Filme("Filme 3", 5, 10.0);
+		Filme filmeA = umFilme().agora();
+		Filme filmeB = umFilme().agora();
+		Filme filmeC = umFilme().agora();
 		
 		Collection<Filme> filmes = new ArrayList<Filme>(Arrays.asList(filmeA, filmeB, filmeC));
 
@@ -171,7 +200,7 @@ public class LocacaoServiceTest {
 	
 	@Test
 	public void naoDeveAlugarFilmeSemFilme() throws FilmeSemEstoqueException, LocadoraException {
-		Usuario usuario = new Usuario("Mario Miranda");
+		Usuario usuario = umUsuario().agora();
 
 		exception.expect(LocadoraException.class);
 		exception.expectMessage("Filme vazio");
@@ -242,8 +271,8 @@ public class LocacaoServiceTest {
 		
 		Assume.assumeTrue(DataUtils.verificarDiaSemana(new Date(), Calendar.SATURDAY));
 		
-		Usuario usuario = new Usuario("Cristina");
-		Collection<Filme> filmes = Arrays.asList(new Filme("Filme1", 1, 5.0));
+		Usuario usuario = umUsuario().agora();
+		Collection<Filme> filmes = Arrays.asList(umFilme().agora());
 		
 		Locacao retorno = service.alugarFilme(usuario, filmes);
 		
@@ -256,5 +285,58 @@ public class LocacaoServiceTest {
 		
 //		assertThat(retorno.getDataLocacao(), caiEm(Calendar.MONDAY));
 		assertThat(retorno.getDataLocacao(), caiNumaSegundaFeira());
+	}
+	
+	@Test
+	public void naoDeveAlugarFilmeParaUsuarioNegativadoSPC() throws FilmeSemEstoqueException {
+		// cenario
+		Usuario usuario = umUsuario().agora();
+//		Usuario usuario2 = umUsuario().comNome("Usuario 2").agora();
+		List<Filme> filmes = Arrays.asList(umFilme().agora());
+		
+//		when(spcService.possuiNegativacao(usuario)).thenReturn(TRUE);
+		when(spcService.possuiNegativacao(Mockito.any(Usuario.class))).thenReturn(TRUE);
+		
+		// acao
+		try {
+			service.alugarFilme(usuario, filmes);
+			
+		// verificacao
+			Assert.fail(); // para nao gerar um falso positivo!!!
+		} catch (LocadoraException e) {
+			Assert.assertThat(e.getMessage(), is("Usuario negativado"));
+		}
+		
+		verify(spcService).possuiNegativacao(usuario);
+	}
+	
+	@Test
+	public void deveEnviarEmailParaLocacoesAtrasadas() {
+		// cenario
+		Usuario usuario1 = umUsuario().agora();
+		Usuario usuario2 = umUsuario().comNome("Usuario Em Dia").agora();
+		Usuario usuario3 = umUsuario().comNome("Usuario Em Atraso").agora();
+		List<Locacao> locacoes = Arrays.asList(
+				umaLocacao().comUsuario(usuario1).comDataEntregaAtrasada().agora(),
+				umaLocacao().comUsuario(usuario2).agora(),
+				umaLocacao().comUsuario(usuario3).comDataEntregaAtrasada().agora(),
+				umaLocacao().comUsuario(usuario3).comDataEntregaAtrasada().agora()
+				);
+		
+		when(dao.obterLocacoesPendentes()).thenReturn(locacoes);
+		
+		// acao
+		service.notificarAtrasos();
+		
+		// verificacao
+		verify(emailService, times(3)).notificarAtraso(Mockito.any(Usuario.class));
+		verify(emailService).notificarAtraso(usuario1);
+		verify(emailService, never()).notificarAtraso(usuario2);
+		verify(emailService, times(2)).notificarAtraso(usuario3);
+		verify(emailService, atLeast(2)).notificarAtraso(usuario3);
+		verify(emailService, atMost(2)).notificarAtraso(usuario3);
+		verify(emailService, atLeastOnce()).notificarAtraso(usuario3);
+		verifyNoMoreInteractions(emailService);
+		verifyZeroInteractions(spcService); // apenas para conhecimento, metodo nao tem interacao
 	}
 }
