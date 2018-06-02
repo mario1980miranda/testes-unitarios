@@ -3,7 +3,6 @@ package br.ce.wcaquino.servicos;
 import static br.ce.wcaquino.utils.DataUtils.adicionarDias;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
@@ -87,28 +86,5 @@ public class LocacaoService {
 		return locacao;
 	}
 
-	public static void main(String[] args) {
-		// cenario
-		LocacaoService service = new LocacaoService();
-		Usuario usuario = new Usuario("Mario Miranda");
-		Filme filmeA = new Filme("Filme 1", 2, 5.0);
-		Filme filmeB = new Filme("Filme 2", 1, 4.0);
-		Filme filmeC = new Filme("Filme 3", 5, 10.0);
-		
-		Collection<Filme> filmes = new ArrayList<Filme>(Arrays.asList(filmeA, filmeB, filmeC));
-		
-		try {
-			// acao
-			Locacao locacao = service.alugarFilme(usuario, filmes);
-			
-			// validacao
-			System.out.println(locacao.getValor() == 19.0);
-			System.out.println(DataUtils.isMesmaData(locacao.getDataLocacao(), new Date()));
-			System.out.println(DataUtils.isMesmaData(locacao.getDataRetorno(), DataUtils.obterDataComDiferencaDias(1)));
-			
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
+	
 }

@@ -1,5 +1,8 @@
 package br.ce.wcaquino.servicos;
 
+import static br.ce.wcaquino.builders.FilmeBuilder.umFilme;
+import static br.ce.wcaquino.builders.FilmeBuilder.umFilmeSemEstoque;
+import static br.ce.wcaquino.builders.UsuarioBuilder.umUsuario;
 import static br.ce.wcaquino.matchers.OwnMatchers.caiNumaSegundaFeira;
 import static br.ce.wcaquino.matchers.OwnMatchers.ehHoje;
 import static br.ce.wcaquino.matchers.OwnMatchers.ehHojeComDiferencaEmDias;
@@ -65,8 +68,8 @@ public class LocacaoServiceTest {
 		Assume.assumeFalse(DataUtils.verificarDiaSemana(new Date(), Calendar.MONDAY));
 		
 		// cenario
-		Usuario usuario = new Usuario("Mario Miranda");
-		Filme filmeA = new Filme("Filme 1", 2, 5.0);
+		Usuario usuario = umUsuario().agora();
+		Filme filmeA = umFilme().comValor(5.0).agora();
 		
 		Collection<Filme> filmes = new ArrayList<Filme>(Arrays.asList(filmeA));
 		
@@ -99,10 +102,10 @@ public class LocacaoServiceTest {
 	 * Funciona bem quando apenas a exception importa para o test.
 	 */
 	public void naoDeveAlugarFilmeSemEstoque_Elegante() throws Exception {
-		Usuario usuario = new Usuario("Mario Miranda");
-		Filme filmeA = new Filme("Filme 1", 2, 5.0);
-		Filme filmeB = new Filme("Filme 2", 0, 4.0);
-		Filme filmeC = new Filme("Filme 3", 5, 10.0);
+		Usuario usuario = umUsuario().agora();
+		Filme filmeA = umFilme().agora();
+		Filme filmeB = umFilmeSemEstoque().agora();
+		Filme filmeC = umFilme().agora();
 		
 		Collection<Filme> filmes = new ArrayList<Filme>(Arrays.asList(filmeA, filmeB, filmeC));
 
@@ -117,10 +120,10 @@ public class LocacaoServiceTest {
 	 * Solucao mais completa
 	 */
 	public void naoDeveAlugarFilmeSemEstoque_Robusta() {
-		Usuario usuario = new Usuario("Mario Miranda");
-		Filme filmeA = new Filme("Filme 1", 2, 5.0);
-		Filme filmeB = new Filme("Filme 2", 1, 4.0);
-		Filme filmeC = new Filme("Filme 3", 0, 10.0);
+		Usuario usuario = umUsuario().agora();
+		Filme filmeA = umFilme().semEstoque().agora();
+		Filme filmeB = umFilme().agora();
+		Filme filmeC = umFilme().agora();
 		
 		Collection<Filme> filmes = new ArrayList<Filme>(Arrays.asList(filmeA, filmeB, filmeC));
 		
@@ -140,10 +143,10 @@ public class LocacaoServiceTest {
 	 * A regra deve ser declarada antes da acao (de chamar a classe de servico)
 	 */
 	public void naoDeveAlugarFilmeSemEstoque_RegraExcecaoEsperada() throws Exception {
-		Usuario usuario = new Usuario("Mario Miranda");
-		Filme filmeA = new Filme("Filme 1", 0, 5.0);
-		Filme filmeB = new Filme("Filme 2", 1, 4.0);
-		Filme filmeC = new Filme("Filme 3", 5, 10.0);
+		Usuario usuario = umUsuario().agora();
+		Filme filmeA = umFilme().agora();
+		Filme filmeB = umFilme().agora();
+		Filme filmeC = umFilme().semEstoque().agora();
 		
 		Collection<Filme> filmes = new ArrayList<Filme>(Arrays.asList(filmeA, filmeB, filmeC));
 
@@ -155,9 +158,9 @@ public class LocacaoServiceTest {
 	
 	@Test
 	public void naoDeveAlugarFilmeSemUsuario() throws FilmeSemEstoqueException {
-		Filme filmeA = new Filme("Filme 1", 2, 5.0);
-		Filme filmeB = new Filme("Filme 2", 1, 4.0);
-		Filme filmeC = new Filme("Filme 3", 5, 10.0);
+		Filme filmeA = umFilme().agora();
+		Filme filmeB = umFilme().agora();
+		Filme filmeC = umFilme().agora();
 		
 		Collection<Filme> filmes = new ArrayList<Filme>(Arrays.asList(filmeA, filmeB, filmeC));
 
@@ -171,7 +174,7 @@ public class LocacaoServiceTest {
 	
 	@Test
 	public void naoDeveAlugarFilmeSemFilme() throws FilmeSemEstoqueException, LocadoraException {
-		Usuario usuario = new Usuario("Mario Miranda");
+		Usuario usuario = umUsuario().agora();
 
 		exception.expect(LocadoraException.class);
 		exception.expectMessage("Filme vazio");
@@ -242,8 +245,8 @@ public class LocacaoServiceTest {
 		
 		Assume.assumeTrue(DataUtils.verificarDiaSemana(new Date(), Calendar.SATURDAY));
 		
-		Usuario usuario = new Usuario("Cristina");
-		Collection<Filme> filmes = Arrays.asList(new Filme("Filme1", 1, 5.0));
+		Usuario usuario = umUsuario().agora();
+		Collection<Filme> filmes = Arrays.asList(umFilme().agora());
 		
 		Locacao retorno = service.alugarFilme(usuario, filmes);
 		
