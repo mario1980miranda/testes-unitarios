@@ -7,6 +7,8 @@ import static br.ce.wcaquino.builders.UsuarioBuilder.umUsuario;
 import static br.ce.wcaquino.matchers.OwnMatchers.caiNumaSegundaFeira;
 import static br.ce.wcaquino.matchers.OwnMatchers.ehHoje;
 import static br.ce.wcaquino.matchers.OwnMatchers.ehHojeComDiferencaEmDias;
+import static br.ce.wcaquino.utils.DataUtils.isMesmaData;
+import static br.ce.wcaquino.utils.DataUtils.obterData;
 import static java.lang.Boolean.TRUE;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
@@ -23,7 +25,6 @@ import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
@@ -31,18 +32,21 @@ import java.util.List;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
-import org.junit.Assume;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ErrorCollector;
 import org.junit.rules.ExpectedException;
+import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
 import br.ce.wcaquino.daos.LocacaoDAO;
 import br.ce.wcaquino.entidades.Filme;
@@ -52,6 +56,8 @@ import br.ce.wcaquino.exceptions.FilmeSemEstoqueException;
 import br.ce.wcaquino.exceptions.LocadoraException;
 import br.ce.wcaquino.utils.DataUtils;
 
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({LocacaoService.class, DataUtils.class})
 public class LocacaoServiceTest {
 	
 	@InjectMocks
@@ -98,11 +104,10 @@ public class LocacaoServiceTest {
 	@Test
 	public void deveAlugarFilme() throws Exception {
 		
-		Assume.assumeFalse(DataUtils.verificarDiaSemana(new Date(), Calendar.MONDAY));
-		
 		// cenario
 		Usuario usuario = umUsuario().agora();
 		Filme filmeA = umFilme().comValor(5.0).agora();
+		PowerMockito.whenNew(Date.class).withNoArguments().thenReturn(DataUtils.obterData(28, 4, 2017));
 		
 		Collection<Filme> filmes = new ArrayList<Filme>(Arrays.asList(filmeA));
 		
@@ -124,8 +129,9 @@ public class LocacaoServiceTest {
 		error.checkThat(locacao.getValor(), is(equalTo(5.0)));
 //		error.checkThat(isMesmaData(locacao.getDataLocacao(), new Date()), is(true));
 		error.checkThat(locacao.getDataLocacao(), ehHoje());
-//		error.checkThat(isMesmaData(locacao.getDataRetorno(), obterDataComDiferencaDias(1)), is(false));
 		error.checkThat(locacao.getDataRetorno(), ehHojeComDiferencaEmDias(1));
+		error.checkThat(isMesmaData(locacao.getDataLocacao(), obterData(28, 4, 2017)) , is(TRUE));
+		error.checkThat(isMesmaData(locacao.getDataRetorno(), obterData(29, 4, 2017)) , is(TRUE));
 	}
 	
 	@Test(expected=FilmeSemEstoqueException.class) 
@@ -274,14 +280,18 @@ public class LocacaoServiceTest {
 //	}
 	
 	@Test
-	public void naoDeveDevolverFilmeNoDomingo() throws LocadoraException, FilmeSemEstoqueException {
+	public void naoDeveDevolverFilmeNoDomingo() throws Exception {
 		
-		Assume.assumeTrue(DataUtils.verificarDiaSemana(new Date(), Calendar.SATURDAY));
-		
+		// cenario
 		Usuario usuario = umUsuario().agora();
 		Collection<Filme> filmes = Arrays.asList(umFilme().agora());
 		
+		PowerMockito.whenNew(Date.class).withNoArguments().thenReturn(DataUtils.obterData(29, 4, 2017));
+		
+		// acao
 		Locacao retorno = service.alugarFilme(usuario, filmes);
+		
+		// verificacao
 		
 //		boolean ehSegunda = DataUtils.verificarDiaSemana(retorno.getDataRetorno(), Calendar.MONDAY);
 //		Assert.assertTrue(ehSegunda);
@@ -291,7 +301,7 @@ public class LocacaoServiceTest {
 //		assertThat(retorno.getDataLocacao(), new DiaDaSemanaMatcher(Calendar.MONDAY));
 		
 //		assertThat(retorno.getDataLocacao(), caiEm(Calendar.MONDAY));
-		assertThat(retorno.getDataLocacao(), caiNumaSegundaFeira());
+		assertThat(retorno.getDataRetorno(), caiNumaSegundaFeira());
 	}
 	
 	@Test

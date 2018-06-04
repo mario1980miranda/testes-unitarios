@@ -61,21 +61,11 @@ public class LocacaoService {
 			Double valorFilme = filme.getPrecoLocacao();
 			
 			switch (i) {
-			case 2:
-				valorFilme = valorFilme * 0.75;
-				break;
-			case 3:
-				valorFilme = valorFilme * 0.50;
-				break;
-			case 4:
-				valorFilme = valorFilme * 0.25;
-				break;
-			case 5:
-				valorFilme = valorFilme * 0.0;
-				break;
-
-			default:
-				break;
+				case 2: valorFilme = valorFilme * 0.75; break;
+				case 3: valorFilme = valorFilme * 0.50; break;
+				case 4: valorFilme = valorFilme * 0.25; break;
+				case 5: valorFilme = valorFilme * 0.0; break;
+				default: break;
 			}
 			
 			valorTotal += valorFilme;
