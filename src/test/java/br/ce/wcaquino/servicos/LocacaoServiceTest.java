@@ -2,10 +2,7 @@ package br.ce.wcaquino.servicos;
 
 import static br.ce.wcaquino.builders.FilmeBuilder.umFilme;
 import static br.ce.wcaquino.builders.FilmeBuilder.umFilmeSemEstoque;
-<<<<<<< HEAD
 import static br.ce.wcaquino.builders.LocacaoBuilder.umaLocacao;
-=======
->>>>>>> 7898f8223f99829262786bd18292328b9b8e296d
 import static br.ce.wcaquino.builders.UsuarioBuilder.umUsuario;
 import static br.ce.wcaquino.matchers.OwnMatchers.caiNumaSegundaFeira;
 import static br.ce.wcaquino.matchers.OwnMatchers.ehHoje;

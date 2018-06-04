@@ -15,14 +15,11 @@ public class UsuarioBuilder {
 		return builder;
 	}
 	
-<<<<<<< HEAD
 	public UsuarioBuilder comNome(String nome) {
 		usuario.setNome(nome);
 		return this;
 	}
 	
-=======
->>>>>>> 7898f8223f99829262786bd18292328b9b8e296d
 	public Usuario agora() {
 		return usuario;
 	}
