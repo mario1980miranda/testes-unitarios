@@ -38,7 +38,10 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ErrorCollector;
 import org.junit.rules.ExpectedException;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
 
 import br.ce.wcaquino.daos.LocacaoDAO;
 import br.ce.wcaquino.entidades.Filme;
@@ -50,12 +53,14 @@ import br.ce.wcaquino.utils.DataUtils;
 
 public class LocacaoServiceTest {
 	
+	@InjectMocks
 	private LocacaoService service;
 	
+	@Mock
 	private SPCService spcService;
-	
+	@Mock
 	private EmailService emailService;
-	
+	@Mock
 	private LocacaoDAO dao;
 	
 	@Rule public ErrorCollector error = new ErrorCollector();
@@ -64,13 +69,14 @@ public class LocacaoServiceTest {
 	
 	@Before
 	public void setup() {
-		service = new LocacaoService();
-		dao = Mockito.mock(LocacaoDAO.class);
-		service.setLocacaoDAO(dao);
-		spcService = Mockito.mock(SPCService.class);
-		service.setSPCService(spcService);
-		emailService = Mockito.mock(EmailService.class);
-		service.setEmailService(emailService);
+		MockitoAnnotations.initMocks(this);
+//		service = new LocacaoService();
+//		dao = Mockito.mock(LocacaoDAO.class);
+//		service.setLocacaoDAO(dao);
+//		spcService = Mockito.mock(SPCService.class);
+//		service.setSPCService(spcService);
+//		emailService = Mockito.mock(EmailService.class);
+//		service.setEmailService(emailService);
 	}
 	
 	@After
@@ -288,7 +294,7 @@ public class LocacaoServiceTest {
 	}
 	
 	@Test
-	public void naoDeveAlugarFilmeParaUsuarioNegativadoSPC() throws FilmeSemEstoqueException {
+	public void naoDeveAlugarFilmeParaUsuarioNegativadoSPC() throws Exception {
 		// cenario
 		Usuario usuario = umUsuario().agora();
 //		Usuario usuario2 = umUsuario().comNome("Usuario 2").agora();
@@ -338,5 +344,21 @@ public class LocacaoServiceTest {
 		verify(emailService, atLeastOnce()).notificarAtraso(usuario3);
 		verifyNoMoreInteractions(emailService);
 		verifyZeroInteractions(spcService); // apenas para conhecimento, metodo nao tem interacao
+	}
+	
+	@Test
+	public void deveTratarErroAoObterFalhaAoConsultarSPC() throws Exception {
+		// cenario
+		Usuario usuario = umUsuario().agora();
+		List<Filme> filmes = Arrays.asList(umFilme().agora());
+		
+		when(spcService.possuiNegativacao(usuario)).thenThrow(new Exception("Falha catastrofica"));
+
+		// verificacao
+		exception.expect(LocadoraException.class);
+		exception.expectMessage("Problemas com SPC, tente novamente");
+		
+		// acao
+		service.alugarFilme(usuario, filmes);
 	}
 }
