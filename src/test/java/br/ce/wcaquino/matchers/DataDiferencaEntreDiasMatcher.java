@@ -1,8 +1,8 @@
 package br.ce.wcaquino.matchers;
 
-import java.util.Calendar;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.Locale;
 
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeMatcher;
@@ -18,10 +18,9 @@ public class DataDiferencaEntreDiasMatcher extends TypeSafeMatcher<Date> {
 	}
 	
 	public void describeTo(Description desc) {
-		Calendar data = Calendar.getInstance();
-		data.set(Calendar.DAY_OF_WEEK, quantidadeDias);
-		String dataExtenso = data.getDisplayName(Calendar.DAY_OF_WEEK, Calendar.LONG, new Locale("pt", "BR"));
-		desc.appendText(dataExtenso);
+		Date dataEsperada = DataUtils.obterDataComDiferencaDias(quantidadeDias);
+		DateFormat format = new SimpleDateFormat("dd/MM/YYYY");
+		desc.appendText(format.format(dataEsperada));
 	}
 
 	@Override
