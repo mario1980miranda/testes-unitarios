@@ -40,7 +40,6 @@ public class CalculoValorLocacaoTeste {
 	
 	@InjectMocks
 	private LocacaoService service;
-	
 	@Mock
 	private SPCService spcService;
 	@Mock
