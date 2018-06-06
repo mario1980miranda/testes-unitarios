@@ -48,6 +48,33 @@ public class LocacaoService {
 		
 		List<Filme> lstFilmes = new ArrayList<Filme>(filmes);
 		
+		Double valorTotal = calcularValorLocacao(lstFilmes);
+		
+		if (valorTotal == 0.0) {
+			throw new LocadoraException("Valor vazio");
+		}
+		
+		Locacao locacao = new Locacao();
+		locacao.setFilmes(filmes);
+		locacao.setUsuario(usuario);
+		locacao.setDataLocacao(Calendar.getInstance().getTime());
+		locacao.setValor(valorTotal);
+
+		//Entrega no dia seguinte
+		Date dataEntrega = Calendar.getInstance().getTime();
+		dataEntrega = adicionarDias(dataEntrega, 1);
+		if (DataUtils.verificarDiaSemana(dataEntrega, Calendar.SUNDAY)) {
+			dataEntrega = adicionarDias(dataEntrega, 1);
+		}
+		
+		locacao.setDataRetorno(dataEntrega);
+		
+		dao.salvar(locacao);
+		
+		return locacao;
+	}
+
+	private Double calcularValorLocacao(List<Filme> lstFilmes) throws FilmeSemEstoqueException {
 		Double valorTotal = 0.0;
 		
 		for (int i = 0; i < lstFilmes.size(); i++) {
@@ -70,29 +97,7 @@ public class LocacaoService {
 			
 			valorTotal += valorFilme;
 		}
-		
-		if (valorTotal == 0.0) {
-			throw new LocadoraException("Valor vazio");
-		}
-		
-		Locacao locacao = new Locacao();
-		locacao.setFilmes(filmes);
-		locacao.setUsuario(usuario);
-		locacao.setDataLocacao(new Date());
-		locacao.setValor(valorTotal);
-
-		//Entrega no dia seguinte
-		Date dataEntrega = new Date();
-		dataEntrega = adicionarDias(dataEntrega, 1);
-		if (DataUtils.verificarDiaSemana(dataEntrega, Calendar.SUNDAY)) {
-			dataEntrega = adicionarDias(dataEntrega, 1);
-		}
-		
-		locacao.setDataRetorno(dataEntrega);
-		
-		dao.salvar(locacao);
-		
-		return locacao;
+		return valorTotal;
 	}
 
 	public void notificarAtrasos() {
