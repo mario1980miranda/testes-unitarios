@@ -4,7 +4,6 @@ import static br.ce.wcaquino.builders.FilmeBuilder.umFilme;
 import static br.ce.wcaquino.builders.FilmeBuilder.umFilmeSemEstoque;
 import static br.ce.wcaquino.builders.LocacaoBuilder.umaLocacao;
 import static br.ce.wcaquino.builders.UsuarioBuilder.umUsuario;
-import static br.ce.wcaquino.matchers.OwnMatchers.caiNumaSegundaFeira;
 import static br.ce.wcaquino.matchers.OwnMatchers.ehHoje;
 import static br.ce.wcaquino.matchers.OwnMatchers.ehHojeComDiferencaEmDias;
 import static br.ce.wcaquino.utils.DataUtils.isMesmaData;
@@ -25,7 +24,9 @@ import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 
 import org.junit.After;
@@ -37,12 +38,16 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ErrorCollector;
 import org.junit.rules.ExpectedException;
+import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.mockito.Spy;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
+import org.powermock.reflect.Whitebox;
 
 import br.ce.wcaquino.daos.LocacaoDAO;
 import br.ce.wcaquino.entidades.Filme;
@@ -50,11 +55,14 @@ import br.ce.wcaquino.entidades.Locacao;
 import br.ce.wcaquino.entidades.Usuario;
 import br.ce.wcaquino.exceptions.FilmeSemEstoqueException;
 import br.ce.wcaquino.exceptions.LocadoraException;
+import br.ce.wcaquino.matchers.OwnMatchers;
 import br.ce.wcaquino.utils.DataUtils;
 
-public class LocacaoServiceTest {
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({LocacaoService.class/*, DataUtils.class*/})
+public class LocacaoServiceTest_PowerMock {
 	
-	@InjectMocks @Spy
+	@InjectMocks
 	private LocacaoService service;
 	
 	@Mock
@@ -71,12 +79,19 @@ public class LocacaoServiceTest {
 	@Before
 	public void setup() {
 		MockitoAnnotations.initMocks(this);
-		System.out.println("iniciando...");
+		service = PowerMockito.spy(service);
+//		service = new LocacaoService();
+//		dao = Mockito.mock(LocacaoDAO.class);
+//		service.setLocacaoDAO(dao);
+//		spcService = Mockito.mock(SPCService.class);
+//		service.setSPCService(spcService);
+//		emailService = Mockito.mock(EmailService.class);
+//		service.setEmailService(emailService);
 	}
 	
 	@After
 	public void tearDown() {
-		System.out.println("finalizando...");
+		
 	}
 	
 	@BeforeClass
@@ -95,21 +110,39 @@ public class LocacaoServiceTest {
 		// cenario
 		Usuario usuario = umUsuario().agora();
 		Filme filmeA = umFilme().comValor(5.0).agora();
-
+		PowerMockito.whenNew(Date.class).withNoArguments().thenReturn(DataUtils.obterData(28, 4, 2017));
+		
 		Collection<Filme> filmes = new ArrayList<Filme>(Arrays.asList(filmeA));
-
-		Mockito.doReturn(DataUtils.obterData(28, 4, 2017)).when(service).obterData();
 		
 		// acao
 		Locacao locacao = service.alugarFilme(usuario, filmes);
 		
 		// verificacao
+//		Assert.assertEquals(5.0, locacao.getValor(), 0.01);
+//		Assert.assertTrue(DataUtils.isMesmaData(locacao.getDataLocacao(), new Date()));
+//		Assert.assertTrue(DataUtils.isMesmaData(locacao.getDataRetorno(), DataUtils.obterDataComDiferencaDias(1)));
+		
+		// We can use fluent interface and static import to make reading easier
+//		assertThat(locacao.getValor(), is(equalTo(5.0)));
+//		assertThat(locacao.getValor(), is(not(6.0)));
+//		assertThat(isMesmaData(locacao.getDataLocacao(), new Date()), is(true));
+//		assertThat(isMesmaData(locacao.getDataRetorno(), obterDataComDiferencaDias(1)), is(true));
+		
+		// with ErrorCollector tests continue after finding the first error
 		error.checkThat(locacao.getValor(), is(equalTo(5.0)));
+//		error.checkThat(isMesmaData(locacao.getDataLocacao(), new Date()), is(true));
+//		error.checkThat(locacao.getDataLocacao(), ehHoje());
+//		error.checkThat(locacao.getDataRetorno(), ehHojeComDiferencaEmDias(1));
 		error.checkThat(isMesmaData(locacao.getDataLocacao(), obterData(28, 4, 2017)) , is(TRUE));
 		error.checkThat(isMesmaData(locacao.getDataRetorno(), obterData(29, 4, 2017)) , is(TRUE));
 	}
 	
 	@Test(expected=FilmeSemEstoqueException.class) 
+	/**
+	 * Forma elegante: Simples, enxuta, porem muito superficial
+	 * Uma anotacao e adicionada para que o Junit capture-a e trate-a
+	 * Funciona bem quando apenas a exception importa para o test.
+	 */
 	public void naoDeveAlugarFilmeSemEstoque_Elegante() throws Exception {
 		Usuario usuario = umUsuario().agora();
 		Filme filmeA = umFilme().agora();
@@ -122,6 +155,12 @@ public class LocacaoServiceTest {
 	}
 	
 	@Test 
+	/**
+	 * Forma Robusta: maior controle sobre a execucao do teste, inclusive pode continuar o codigo apos o catch
+	 * Nao e possivel capturar a mensagem da axception para que se possa garantir
+	 * O desenvolvedor deve tratar todas as excecoes explicitamente, nao deixando para o Junit tratar a exception
+	 * Solucao mais completa
+	 */
 	public void naoDeveAlugarFilmeSemEstoque_Robusta() {
 		Usuario usuario = umUsuario().agora();
 		Filme filmeA = umFilme().semEstoque().agora();
@@ -134,11 +173,17 @@ public class LocacaoServiceTest {
 			service.alugarFilme(usuario, filmes);
 			Assert.fail("Deveria ter lançado uma exceção");
 		} catch (Exception e) {
+//			e.printStackTrace();
 			Assert.assertThat(e.getMessage(), is("Filme sem estoque"));
 		}
 	}
 	
 	@Test
+	/**
+	 * Permite configurar que tipo de excpetion sera capturada e inclusive comparar a mensagem
+	 * Uma regra de exception deve ser declarada no inicio da classe: @ExpectedException
+	 * A regra deve ser declarada antes da acao (de chamar a classe de servico)
+	 */
 	public void naoDeveAlugarFilmeSemEstoque_RegraExcecaoEsperada() throws Exception {
 		Usuario usuario = umUsuario().agora();
 		Filme filmeA = umFilme().agora();
@@ -179,6 +224,64 @@ public class LocacaoServiceTest {
 		service.alugarFilme(usuario, null);
 	}
 	
+//	@Test
+//	public void devePagar75PctNoFilme3() throws LocadoraException, FilmeSemEstoqueException {
+//		//cenario
+//		Usuario usuario = new Usuario("User 1");
+//		Collection<Filme> filmes = new ArrayList<Filme>(Arrays.asList(new Filme("Filme 1", 2, 4.0),
+//				new Filme("Filme 2", 2, 4.0), new Filme("Filme 3", 2, 4.0)));
+//		//acao
+//		Locacao resultado = service.alugarFilme(usuario, filmes);
+//		
+//		//verificacao
+//		//4+4+3=11
+//		assertThat(resultado.getValor(), is(11.0));
+//	}
+//	
+//	@Test
+//	public void devePagar50PctNoFilme4() throws LocadoraException, FilmeSemEstoqueException {
+//		//cenario
+//		Usuario usuario = new Usuario("User 1");
+//		Collection<Filme> filmes = new ArrayList<Filme>(Arrays.asList(new Filme("Filme 1", 2, 4.0),
+//				new Filme("Filme 2", 2, 4.0), new Filme("Filme 3", 2, 4.0), new Filme("Filme 4", 2, 4.0)));
+//		//acao
+//		Locacao resultado = service.alugarFilme(usuario, filmes);
+//		
+//		//verificacao
+//		//4+4+3+2=13
+//		assertThat(resultado.getValor(), is(13.0));
+//	}
+//	
+//	@Test
+//	public void devePagar25PctNoFilme5() throws LocadoraException, FilmeSemEstoqueException {
+//		//cenario
+//		Usuario usuario = new Usuario("User 1");
+//		Collection<Filme> filmes = new ArrayList<Filme>(
+//				Arrays.asList(new Filme("Filme 1", 2, 4.0), new Filme("Filme 2", 2, 4.0), new Filme("Filme 3", 2, 4.0),
+//						new Filme("Filme 4", 2, 4.0), new Filme("Filme 5", 2, 4.0)));
+//		//acao
+//		Locacao resultado = service.alugarFilme(usuario, filmes);
+//		
+//		//verificacao
+//		//4+4+3+2+1=14
+//		assertThat(resultado.getValor(), is(14.0));
+//	}
+//	
+//	@Test
+//	public void devePagar0PctNoFilme6() throws LocadoraException, FilmeSemEstoqueException {
+//		//cenario
+//		Usuario usuario = new Usuario("User 1");
+//		Collection<Filme> filmes = new ArrayList<Filme>(
+//				Arrays.asList(new Filme("Filme 1", 2, 4.0), new Filme("Filme 2", 2, 4.0), new Filme("Filme 3", 2, 4.0),
+//						new Filme("Filme 4", 2, 4.0), new Filme("Filme 5", 2, 4.0), new Filme("Filme 6", 2, 4.0)));
+//		//acao
+//		Locacao resultado = service.alugarFilme(usuario, filmes);
+//		
+//		//verificacao
+//		//4+4+3+2+1+0=14
+//		assertThat(resultado.getValor(), is(14.0));
+//	}
+	
 	@Test
 	public void naoDeveDevolverFilmeNoDomingo() throws Exception {
 		
@@ -186,13 +289,25 @@ public class LocacaoServiceTest {
 		Usuario usuario = umUsuario().agora();
 		Collection<Filme> filmes = Arrays.asList(umFilme().agora());
 		
-		Mockito.doReturn(DataUtils.obterData(29, 4, 2017)).when(service).obterData();
+		PowerMockito.whenNew(Date.class).withNoArguments().thenReturn(DataUtils.obterData(29, 4, 2017));
 		
 		// acao
 		Locacao retorno = service.alugarFilme(usuario, filmes);
 		
 		// verificacao
-		assertThat(retorno.getDataRetorno(), caiNumaSegundaFeira());
+		
+//		boolean ehSegunda = DataUtils.verificarDiaSemana(retorno.getDataRetorno(), Calendar.MONDAY);
+//		Assert.assertTrue(ehSegunda);
+//		assertThat(retorno.getDataLocacao(), caiEm(Calendar.MONDAY));
+//		assertThat(retorno.getDataLocacao(), caiNumaSegundaFeira());
+		
+//		assertThat(retorno.getDataLocacao(), new DiaDaSemanaMatcher(Calendar.MONDAY));
+		
+//		assertThat(retorno.getDataLocacao(), caiEm(Calendar.MONDAY));
+		assertThat(retorno.getDataRetorno(), OwnMatchers.caiNumaSegundaFeira());
+		
+		PowerMockito.verifyStatic(Mockito.times(2));
+		Calendar.getInstance();
 	}
 	
 	@Test
@@ -280,5 +395,33 @@ public class LocacaoServiceTest {
 		error.checkThat(novaLocacao.getValor(), is(12.0));
 		error.checkThat(novaLocacao.getDataLocacao(), ehHoje());
 		error.checkThat(novaLocacao.getDataRetorno(), ehHojeComDiferencaEmDias(3));
+	}
+	
+	@Test
+	public void deveAlugarFilme_SemCalcularValor() throws Exception {
+		// cenario
+		Usuario usuario = umUsuario().agora();
+		List<Filme> filmes = Arrays.asList(umFilme().agora());
+		
+		PowerMockito.doReturn(1.0).when(service, "calcularValorLocacao", filmes);
+		
+		// acao
+		Locacao locacao = service.alugarFilme(usuario, filmes);
+		
+		// verificacao
+		Assert.assertThat(locacao.getValor(), is(1.0));
+		PowerMockito.verifyPrivate(service).invoke("calcularValorLocacao", filmes);
+	}
+	
+	@Test
+	public void deveCalcularValorLocacao() throws Exception {
+		//cenario
+		List<Filme> filmes = Arrays.asList(umFilme().agora());
+		
+		//acao
+		Double valor = (Double) Whitebox.invokeMethod(service, "calcularValorLocacao", filmes);
+		
+		//verificacao
+		Assert.assertThat(valor, is(4.0));
 	}
 }

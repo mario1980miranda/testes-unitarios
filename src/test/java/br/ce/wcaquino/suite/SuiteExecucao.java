@@ -11,7 +11,11 @@ import br.ce.wcaquino.servicos.CalculoValorLocacaoTeste;
 import br.ce.wcaquino.servicos.LocacaoServiceTest;
 
 //@RunWith(Suite.class)
-@SuiteClasses({ CalculoValorLocacaoTeste.class, LocacaoServiceTest.class, AssertionsTest.class })
+@SuiteClasses({ 
+	CalculoValorLocacaoTeste.class, 
+	LocacaoServiceTest.class, 
+	AssertionsTest.class 
+	})
 public class SuiteExecucao {
 	
 	@BeforeClass
